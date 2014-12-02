@@ -2,6 +2,7 @@ package com.gps.itunes.lib.parser;
 
 import java.io.IOException;
 
+import com.gps.itunes.lib.exceptions.FileCopyException;
 import com.gps.itunes.lib.exceptions.InvalidPlaylistException;
 import com.gps.itunes.lib.items.playlists.Playlist;
 import com.gps.itunes.lib.items.tracks.Track;
@@ -86,7 +87,7 @@ public interface ItunesLibraryParser {
 	 * @throws IOException
 	 */
 	public void copyPlaylists(final String playlistName,
-			final String destination) throws IOException;
+			final String destination) throws IOException, FileCopyException;
 	
 	
 	/**
@@ -101,7 +102,7 @@ public interface ItunesLibraryParser {
 	 * @throws IOException
 	 */
 	public void copyPlaylists(final String playlistName, final String destination,
-			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info) throws IOException;
+			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info) throws IOException, FileCopyException;
 	
 	
 	/**
@@ -112,7 +113,7 @@ public interface ItunesLibraryParser {
 	 * @throws IOException
 	 */
 	public void copyPlaylists(final Long playlistId, final String destination)
-			throws IOException;
+            throws IOException, FileCopyException;
 	
 	
 	/**
@@ -127,6 +128,6 @@ public interface ItunesLibraryParser {
 	 * @throws IOException
 	 */
 	public void copyPlaylists(final Long playlistId, final String destination,
-			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info) throws IOException;
+			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info) throws IOException, FileCopyException;
 			
 }

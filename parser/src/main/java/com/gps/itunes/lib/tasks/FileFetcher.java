@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
 
+import com.gps.itunes.lib.exceptions.FileCopyException;
+import com.gps.itunes.lib.tasks.progressinfo.CopyTrackFailureInformation;
 import com.gps.itunes.lib.tasks.progressinfo.CopyTrackInformation;
 import com.gps.itunes.lib.tasks.progressinfo.ProgressInformation;
 
@@ -33,10 +35,10 @@ public class FileFetcher implements Serializable{
 	 * 
 	 * @param srcArray
 	 * @param dest
-	 * @throws IOException
+	 * @throws FileCopyException
 	 */
 	public static void copyFiles(final String[] srcArray, final String dest)
-			throws IOException {
+			throws FileCopyException {
 		copyFiles(srcArray, dest, null, null);
 	}
 
@@ -49,14 +51,14 @@ public class FileFetcher implements Serializable{
 	 * @param dest
 	 * @param informer
 	 * @param info
-	 * @throws IOException
+	 * @throws FileCopyException
 	 */
 	public static void copyFiles(
 			final String[] srcArray,
 			final String dest,
 			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer,
 			final ProgressInformation<CopyTrackInformation> info)
-			throws IOException {
+			throws FileCopyException {
 		final boolean setProgressInfo = (informer != null && info != null);
 
 		final File destFolder = new File(dest);
@@ -65,50 +67,78 @@ public class FileFetcher implements Serializable{
 		}
 
 		int count = 0;
-		for (final String src : srcArray) {
+        int failedCount = 0;
+        int total = srcArray.length;
+        try {
+            for (final String src : srcArray) {
 
-			final URL srcUrl = new URL(src);
+                FileInputStream fis = null;
+                FileOutputStream fos = null;
 
-			final File file = new File(URLDecoder.decode(srcUrl.getFile(),
-					"UTF-8"));
+                try {
+                    final URL srcUrl = new URL(src);
 
-			final FileInputStream fis = new FileInputStream(file);
+                    final File file = new File(URLDecoder.decode(srcUrl.getFile(),
+                            "UTF-8"));
 
-			final File outputFile = new File(dest + File.separator
-					+ file.getName());
-			final FileOutputStream fos = new FileOutputStream(outputFile);
+                    fis = new FileInputStream(file);
 
-			if (setProgressInfo) {
+                    final File outputFile = new File(dest + File.separator
+                            + file.getName());
+                    fos = new FileOutputStream(outputFile);
 
-				final int progress = (int) ((++count / (float) srcArray.length) * 100);
+                    if (setProgressInfo) {
 
-				final CopyTrackInformation copyTrackInfo = new CopyTrackInformation(
-						progress, srcArray.length, count, file.getName(), outputFile.getAbsolutePath());
+                        final int progress = (int) ((count / (float) total) * 100);
 
-				info.setInformation(copyTrackInfo);
+                        final CopyTrackInformation copyTrackInfo = new CopyTrackInformation(
+                                progress, total, count, file.getName(), outputFile.getAbsolutePath());
 
-				informer.informProgress(info);
-			}
+                        info.setInformation(copyTrackInfo);
 
-			try {
-				log.debug("Writing file: " + outputFile.getAbsolutePath());
-				outputFile.createNewFile();
-				final int len = 2048;
-				final byte[] b = new byte[len];
-				final int off = 0;
+                        informer.informProgress(info);
+                    }
 
-				while (fis.read(b) != -1) {
-					fos.write(b, off, b.length);
-				}
-				log.debug("Done writing file: " + outputFile.getAbsolutePath());
-			} catch (IOException ioe) {
-				log.error("IOException occurred.", ioe);
-			} finally {
-				fis.close();
-				fos.flush();
-				fos.close();
-			}
-		}
+
+                    log.debug("Writing file: " + outputFile.getAbsolutePath());
+                    outputFile.createNewFile();
+                    final int len = 2048;
+                    final byte[] b = new byte[len];
+                    final int off = 0;
+
+                    while (fis.read(b) != -1) {
+                        fos.write(b, off, b.length);
+                    }
+                    log.debug("Done writing file: " + outputFile.getAbsolutePath());
+                    ++count;
+                } catch (IOException ioe) {
+                    log.error("IOException occurred.", ioe);
+
+                    failedCount++;
+                    final int progress = (int) ((count / (float) total) * 100);
+                    CopyTrackFailureInformation copyTrackFailureInformation =
+                            new CopyTrackFailureInformation(
+                                    progress, total, count, src, src,
+                                    ioe.getLocalizedMessage(), failedCount, ioe);
+
+                    info.setInformation(copyTrackFailureInformation);
+
+                    informer.informProgress(info);
+
+                } finally {
+                    if(fis != null) {
+                        fis.close();
+                    }
+                    if(fos != null) {
+                        fos.flush();
+                        fos.close();
+                    }
+                }
+            }
+        } catch (IOException ioe) {
+            log.error("IOException occurred.", ioe);
+            throw new FileCopyException(ioe);
+        }
 
 	}
 }

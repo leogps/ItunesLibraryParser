@@ -1,5 +1,6 @@
 package com.gps.itunes.lib.tasks;
 
+import com.gps.itunes.lib.exceptions.FileCopyException;
 import com.gps.itunes.lib.exceptions.InvalidPlaylistException;
 import com.gps.itunes.lib.exceptions.LibraryParseException;
 import com.gps.itunes.lib.exceptions.NoChildrenException;
@@ -137,13 +138,13 @@ public class LibraryParser implements ItunesLibraryParser {
 
 	@Override
 	public void copyPlaylists(final String playlistName,
-			final String destination) throws IOException {
+			final String destination) throws IOException, FileCopyException {
 		copyPlaylists(playlistName, destination, null, null);
 	}
 	
 	@Override
 	public void copyPlaylists(final String playlistName, final String destination,
-			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info) throws IOException {
+			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info) throws IOException, FileCopyException {
 		for (final Playlist playlist : getAllPlaylists()) {
 			if (playlist.getName().equalsIgnoreCase(playlistName)) {
 				
@@ -172,14 +173,14 @@ public class LibraryParser implements ItunesLibraryParser {
 
 	@Override
 	public void copyPlaylists(final Long playlistId, final String destination)
-			throws IOException {
+            throws IOException, FileCopyException {
 		copyPlaylists(playlistId, destination, null, null);
 		
 	}
 	
 	@Override
 	public void copyPlaylists(final Long playlistId, final String destination,
-			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info) throws IOException {
+			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info) throws IOException, FileCopyException {
 		final Track[] plistTracks = plistTrackMap.get(playlistId);
 
 		final String[] srcArray = TrackLocationRetriever
@@ -204,7 +205,7 @@ public class LibraryParser implements ItunesLibraryParser {
 	 * @param playlistId
 	 * @throws IOException
 	 */
-	public void copyPlaylists(final Long playlistId) throws IOException {
+	public void copyPlaylists(final Long playlistId) throws IOException, FileCopyException {
 
 		copyPlaylists(playlistId, fetchDefaultDestination(playlistId));
 
@@ -225,7 +226,7 @@ public class LibraryParser implements ItunesLibraryParser {
 	 * @param destination
 	 * @throws IOException
 	 */
-	public void copyAllPlaylists(final String destination) throws IOException {
+	public void copyAllPlaylists(final String destination) throws IOException, FileCopyException {
 		Set<Long> plistKeys = plistTrackMap.keySet();
 
 		for (final Iterator<Long> it = plistKeys.iterator(); it.hasNext();) {
