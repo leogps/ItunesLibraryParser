@@ -1,18 +1,18 @@
 package com.gps.itunes.lib.tasks;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLDecoder;
-
 import com.gps.itunes.lib.exceptions.FileCopyException;
 import com.gps.itunes.lib.tasks.progressinfo.CopyTrackFailureInformation;
 import com.gps.itunes.lib.tasks.progressinfo.CopyTrackInformation;
 import com.gps.itunes.lib.tasks.progressinfo.ProgressInformation;
+import com.gps.itunes.lib.tasks.progressinfo.ProgressTracker;
 
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Utility class to copy the library files (files in general) to any
@@ -21,7 +21,9 @@ import java.io.*;
  * @author leogps
  * 
  */
-public class FileFetcher implements Serializable{
+public class FileFetcher implements Serializable {
+
+    public static final String UTF_8 = "UTF-8";
 
 	/**
 	 * 
@@ -37,9 +39,9 @@ public class FileFetcher implements Serializable{
 	 * @param dest
 	 * @throws FileCopyException
 	 */
-	public static void copyFiles(final String[] srcArray, final String dest)
+	public static List<File> copyFiles(final String[] srcArray, final String dest)
 			throws FileCopyException {
-		copyFiles(srcArray, dest, null, null);
+		return copyFiles(srcArray, dest, null);
 	}
 
 	/**
@@ -49,17 +51,15 @@ public class FileFetcher implements Serializable{
 	 * 
 	 * @param srcArray
 	 * @param dest
-	 * @param informer
-	 * @param info
 	 * @throws FileCopyException
 	 */
-	public static void copyFiles(
+	public static List<File> copyFiles(
 			final String[] srcArray,
 			final String dest,
-			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer,
-			final ProgressInformation<CopyTrackInformation> info)
+			final List<ProgressTracker> progressTrackerList)
 			throws FileCopyException {
-		final boolean setProgressInfo = (informer != null && info != null);
+		final boolean setProgressInfo = (progressTrackerList != null && !progressTrackerList.isEmpty());
+        final List<File> copiedFiles = new ArrayList<File>();
 
 		final File destFolder = new File(dest);
 		if (!destFolder.exists()) {
@@ -72,19 +72,17 @@ public class FileFetcher implements Serializable{
         try {
             for (final String src : srcArray) {
 
-                FileInputStream fis = null;
+                InputStream is = null;
                 FileOutputStream fos = null;
 
                 try {
-                    final URL srcUrl = new URL(src);
-
-                    final File file = new File(URLDecoder.decode(srcUrl.getFile(),
-                            "UTF-8"));
-
-                    fis = new FileInputStream(file);
+                    URL url = new URL(src);
+                    URLConnection urlConnection = url.openConnection();
+                    is = urlConnection.getInputStream();
+                    String fileName = getFile(src).getName();
 
                     final File outputFile = new File(dest + File.separator
-                            + file.getName());
+                            + fileName);
                     fos = new FileOutputStream(outputFile);
 
                     if (setProgressInfo) {
@@ -92,24 +90,26 @@ public class FileFetcher implements Serializable{
                         final int progress = (int) ((count / (float) total) * 100);
 
                         final CopyTrackInformation copyTrackInfo = new CopyTrackInformation(
-                                progress, total, count, file.getName(), outputFile.getAbsolutePath());
+                                progress, total, count, fileName, outputFile.getAbsolutePath());
 
-                        info.setInformation(copyTrackInfo);
-
-                        informer.informProgress(info);
+                        for(ProgressTracker progressTracker : progressTrackerList) {
+                            progressTracker.getProgressInformation().setInformation(copyTrackInfo);
+                            progressTracker.getProgressInformer().informProgress(progressTracker.getProgressInformation());
+                        }
                     }
 
 
                     log.debug("Writing file: " + outputFile.getAbsolutePath());
                     outputFile.createNewFile();
-                    final int len = 2048;
+                    final int len = 8192;
                     final byte[] b = new byte[len];
                     final int off = 0;
 
-                    while (fis.read(b) != -1) {
+                    while (is.read(b) != -1) {
                         fos.write(b, off, b.length);
                     }
                     log.debug("Done writing file: " + outputFile.getAbsolutePath());
+                    copiedFiles.add(outputFile);
                     ++count;
                 } catch (IOException ioe) {
                     log.error("IOException occurred.", ioe);
@@ -121,13 +121,16 @@ public class FileFetcher implements Serializable{
                                     progress, total, count, src, src,
                                     ioe.getLocalizedMessage(), failedCount, ioe);
 
-                    info.setInformation(copyTrackFailureInformation);
-
-                    informer.informProgress(info);
+                    if(setProgressInfo) {
+                        for(ProgressTracker progressTracker : progressTrackerList) {
+                            progressTracker.getProgressInformation().setInformation(copyTrackFailureInformation);
+                            progressTracker.getProgressInformer().informProgress(progressTracker.getProgressInformation());
+                        }
+                    }
 
                 } finally {
-                    if(fis != null) {
-                        fis.close();
+                    if(is != null) {
+                        is.close();
                     }
                     if(fos != null) {
                         fos.flush();
@@ -139,6 +142,54 @@ public class FileFetcher implements Serializable{
             log.error("IOException occurred.", ioe);
             throw new FileCopyException(ioe);
         }
-
+        return copiedFiles;
 	}
+
+    /**
+     *  If there is a '+' sign in the src which is fine in a URL, the return file.exists() returns false.
+     *  <br/>
+     *  Only use to fetch the file name and not NIO operations.
+     *
+     * @param src
+     * @return
+     * @throws MalformedURLException
+     * @throws UnsupportedEncodingException
+     */
+    public static File getFile(String src) throws MalformedURLException, UnsupportedEncodingException {
+        final URL srcUrl = new URL(src);
+
+        final File file = new File(URLDecoder.decode(srcUrl.getFile(),
+                UTF_8));
+
+        return file;
+
+    }
+
+    /**
+     *
+     *
+     * @param srcFile
+     * @param destination
+     * @return
+     */
+    public static File searchFile(File srcFile, File destination) {
+        if(destination.isDirectory()) {
+
+            for(File file : destination.listFiles()) {
+                if(file.isDirectory()) {
+                    File returnFile = searchFile(srcFile, file);
+                    if(returnFile != null) {
+                        return returnFile;
+                    }
+                } else if(file.getName().equals(srcFile.getName())) {
+                    return file;
+                }
+            }
+
+        } else {
+            log.error("files can only be searched in directories. Found non-directory.");
+        }
+
+        return null;
+    }
 }

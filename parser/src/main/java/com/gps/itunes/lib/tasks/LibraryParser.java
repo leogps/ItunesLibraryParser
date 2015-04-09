@@ -11,14 +11,14 @@ import com.gps.itunes.lib.parser.utils.LogInitializer;
 import com.gps.itunes.lib.parser.utils.PropertyManager;
 import com.gps.itunes.lib.tasks.progressinfo.CopyTrackInformation;
 import com.gps.itunes.lib.tasks.progressinfo.ProgressInformation;
+import com.gps.itunes.lib.tasks.progressinfo.ProgressTracker;
 import com.gps.itunes.lib.types.LibraryObject;
 import com.gps.itunes.lib.xml.XMLParser;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.net.URL;
+import java.util.*;
 
 /**
  * Provides Solid implementation of {@link ItunesLibraryParser}
@@ -92,27 +92,22 @@ public class LibraryParser implements ItunesLibraryParser {
 		log.debug("Successfully Parsed.");
 	}
 
-	@Override
 	public LibraryObject getRoot() {
 		return root;
 	}
 
-	@Override
 	public Playlist[] getAllPlaylists() {
 		return allPlaylists;
 	}
 
-	@Override
 	public Track[] getAllTracks() {
 		return allTracks;
 	}
 
-	@Override
 	public Track[] getPlaylistTracks(final Long playlistId) {
 		return plistTrackMap.get(playlistId);
 	}
 
-	@Override
 	public Track[] getPlaylistTracks(final String playlistName)
 			throws InvalidPlaylistException {
 		for (final Playlist playlist : getAllPlaylists()) {
@@ -123,8 +118,7 @@ public class LibraryParser implements ItunesLibraryParser {
 
 		throw new InvalidPlaylistException("Invalid playlist: " + playlistName);
 	}
-	
-	@Override
+
 	public Playlist getPlaylist(final Long playlistId)
 			throws InvalidPlaylistException {
 		for (final Playlist playlist : getAllPlaylists()) {
@@ -136,63 +130,113 @@ public class LibraryParser implements ItunesLibraryParser {
 		throw new InvalidPlaylistException("Invalid playlistId: " + playlistId);
 	}
 
-	@Override
 	public void copyPlaylists(final String playlistName,
-			final String destination) throws IOException, FileCopyException {
-		copyPlaylists(playlistName, destination, null, null);
+			final String destination, boolean analyzeDuplicates) throws IOException, FileCopyException, InvalidPlaylistException {
+		copyPlaylists(playlistName, destination, null, null, analyzeDuplicates);
 	}
-	
-	@Override
+
 	public void copyPlaylists(final String playlistName, final String destination,
-			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info) throws IOException, FileCopyException {
+			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info,
+							  boolean analyzeDuplicates) throws IOException, FileCopyException, InvalidPlaylistException {
 		for (final Playlist playlist : getAllPlaylists()) {
 			if (playlist.getName().equalsIgnoreCase(playlistName)) {
-				
-				final File playlistFolder = new File(destination
-						+ File.separator + playlistName);
-				
-				if (!playlistFolder.exists()) {
-					playlistFolder.mkdir();
+
+				if(informer != null && info != null){
+					copyPlaylists(playlist.getPlaylistId(),
+							destination, informer, info, analyzeDuplicates);
+				} else {
+					copyPlaylists(playlist.getPlaylistId(),
+							destination, analyzeDuplicates);
 				}
 
-				if (playlistFolder.exists()) {
-					if(informer != null && info != null){
-						copyPlaylists(playlist.getPlaylistId(),
-								playlistFolder.getAbsolutePath(), informer, info);
-					} else {
-						copyPlaylists(playlist.getPlaylistId(),
-								playlistFolder.getAbsolutePath());
-					}
-				} else {
-					log.error("Playlist folder could not be created.");
-				}
 				break;
 			}
 		}
 	}
 
-	@Override
-	public void copyPlaylists(final Long playlistId, final String destination)
-            throws IOException, FileCopyException {
-		copyPlaylists(playlistId, destination, null, null);
+	public void copyPlaylists(final String playlistName, final String destination,
+							  final List<ProgressTracker> progressTrackerList, boolean analyzeDuplicates)
+			throws IOException, FileCopyException, InvalidPlaylistException {
+		for(ProgressTracker progressTracker : progressTrackerList) {
+			copyPlaylists(playlistName, destination, progressTracker.getProgressInformer(), progressTracker.getProgressInformation(), analyzeDuplicates);
+		}
+
+	}
+
+	public void copyPlaylists(final Long playlistId, final String destination, boolean analyzeDuplicates)
+			throws IOException, FileCopyException, InvalidPlaylistException {
+		copyPlaylists(playlistId, destination, null, null, analyzeDuplicates);
 		
 	}
-	
-	@Override
+
 	public void copyPlaylists(final Long playlistId, final String destination,
-			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info) throws IOException, FileCopyException {
+							  final List<ProgressTracker> progressTrackerList,
+							  boolean analyzeDuplicates) throws IOException, FileCopyException, InvalidPlaylistException {
 		final Track[] plistTracks = plistTrackMap.get(playlistId);
 
-		final String[] srcArray = TrackLocationRetriever
-				.getTrackLocations(plistTracks);
-		
-		if(informer != null && info != null){
-			FileFetcher.copyFiles(srcArray, destination, informer, info);
-		} else {
-			FileFetcher.copyFiles(srcArray, destination);
+		final File playlistFolder = new File(destination
+				+ File.separator + getPlaylist(playlistId).getName() + "-" + playlistId);
+
+		if (!playlistFolder.exists()) {
+			playlistFolder.mkdir();
 		}
-		
-		M3uCreator.createM3u(destination);
+
+		if (playlistFolder.exists()) {
+
+			final String[] srcArray = TrackLocationRetriever
+					.getTrackLocations(plistTracks);
+
+			if(analyzeDuplicates) {
+
+				final List<String> srcArrayNoDuplicates = new ArrayList<String>();
+				final List<String> existingFileList = new ArrayList<String>();
+				final File destinationDir = new File(destination);
+				for (String source : srcArray) {
+					URL url = new URL(source);
+					File existingFile = FileFetcher.searchFile(FileFetcher.getFile(source), destinationDir);
+					if (existingFile != null) {
+						existingFileList.add(existingFile.getAbsolutePath());
+					} else {
+						srcArrayNoDuplicates.add(source);
+					}
+				}
+
+				final List<File> copiedFiles;
+				if (progressTrackerList != null) {
+					copiedFiles = FileFetcher.copyFiles(srcArrayNoDuplicates.toArray(new String[srcArrayNoDuplicates.size()]),
+							playlistFolder.getAbsolutePath(), progressTrackerList);
+				} else {
+					copiedFiles = FileFetcher.copyFiles(srcArrayNoDuplicates.toArray(new String[srcArrayNoDuplicates.size()]),
+							playlistFolder.getAbsolutePath());
+				}
+
+				M3uCreator.createM3u(playlistFolder, copiedFiles, existingFileList);
+
+			} else {
+
+				if (progressTrackerList != null) {
+					FileFetcher.copyFiles(srcArray,
+							playlistFolder.getAbsolutePath(), progressTrackerList);
+				} else {
+					FileFetcher.copyFiles(srcArray,
+							playlistFolder.getAbsolutePath());
+				}
+				M3uCreator.createM3u(playlistFolder.getAbsolutePath());
+			}
+
+		} else {
+			log.error("Playlist folder could not be created.");
+		}
+	}
+
+	public void copyPlaylists(final Long playlistId, final String destination,
+			final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info,
+							  boolean analyzeDuplicates) throws IOException, FileCopyException, InvalidPlaylistException {
+		ProgressTracker progressTracker = new ProgressTracker(informer, info);
+		List<ProgressTracker> progressTrackerList = new ArrayList<ProgressTracker>();
+		progressTrackerList.add(progressTracker);
+
+		copyPlaylists(playlistId, destination, progressTrackerList, analyzeDuplicates);
 	}
 
 	/**
@@ -205,9 +249,9 @@ public class LibraryParser implements ItunesLibraryParser {
 	 * @param playlistId
 	 * @throws IOException
 	 */
-	public void copyPlaylists(final Long playlistId) throws IOException, FileCopyException {
+	public void copyPlaylists(final Long playlistId) throws IOException, FileCopyException, InvalidPlaylistException {
 
-		copyPlaylists(playlistId, fetchDefaultDestination(playlistId));
+		copyPlaylists(playlistId, fetchDefaultDestination(playlistId), false);
 
 	}
 
@@ -226,14 +270,14 @@ public class LibraryParser implements ItunesLibraryParser {
 	 * @param destination
 	 * @throws IOException
 	 */
-	public void copyAllPlaylists(final String destination) throws IOException, FileCopyException {
+	public void copyAllPlaylists(final String destination, boolean analyzeDuplicates) throws IOException, FileCopyException, InvalidPlaylistException {
 		Set<Long> plistKeys = plistTrackMap.keySet();
 
 		for (final Iterator<Long> it = plistKeys.iterator(); it.hasNext();) {
 			final Long playlistId = it.next();
 			copyPlaylists(playlistId,
 					destination == null ? fetchDefaultDestination(playlistId)
-							: destination);
+							: destination, analyzeDuplicates);
 		}
 	}
 
