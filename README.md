@@ -10,3 +10,9 @@ Sourceforge link: http://sourceforge.net/projects/ituneslibparser/
 [License](http://creativecommons.org/licenses/by/4.0/legalcode)
 
 [License summary](http://creativecommons.org/licenses/by/4.0/)
+
+
+Continuous Integration:
+----------------------
+Integrated with Travis CI.
+[Travis-CI](https://travis-ci.org/leogps/ItunesLibraryParser)
