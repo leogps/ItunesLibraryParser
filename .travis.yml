@@ -1,0 +1,10 @@
+#
+## Travis Continuous Integration configuration file.
+## https://travis-ci.org/leogps/ItunesLibraryParser
+#
+jdk: 
+  - oraclejdk8
+  - oraclejdk7
+  - openjdk6
+  - openjdk7
+language: java
