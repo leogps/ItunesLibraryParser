@@ -43,6 +43,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.6</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -54,7 +55,7 @@
                 <configuration>
                     <finalName>${project.groupId}-${project.artifactId}-${project.version}</finalName>
                     <descriptorRefs>
-                        <descriptorRef>with-dependencies</descriptorRef>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                     <archive>
                         <manifest>
