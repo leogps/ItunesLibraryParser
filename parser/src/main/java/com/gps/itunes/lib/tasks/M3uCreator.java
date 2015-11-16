@@ -103,7 +103,7 @@ public class M3uCreator {
 	 * Reference: http://mrpmorris.blogspot.com/2007/05/convert-absolute-path-to-relative-path.html
 	 * by Peter Morris.
 	 *
-	 * @Correction Consider file and if it is add it at the end.
+	 * @Correction Consider file and if it is, add it at the end.
 	 *
 	 * <br/>
 	 *

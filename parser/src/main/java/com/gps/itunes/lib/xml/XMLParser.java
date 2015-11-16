@@ -1,20 +1,11 @@
 package com.gps.itunes.lib.xml;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import com.gps.itunes.lib.exceptions.LibraryParseException;
 import com.gps.itunes.lib.exceptions.NoChildrenException;
-import com.gps.itunes.lib.types.Array;
-import com.gps.itunes.lib.types.True;
+import com.gps.itunes.lib.parser.utils.FileUtils;
+import com.gps.itunes.lib.parser.utils.ProcessesingTimeCheck;
+import com.gps.itunes.lib.parser.utils.PropertyManager;
+import com.gps.itunes.lib.types.*;
 import org.apache.commons.io.IOUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -23,20 +14,11 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import com.gps.itunes.lib.parser.utils.ProcessesingTimeCheck;
-import com.gps.itunes.lib.parser.utils.PropertyManager;
-import com.gps.itunes.lib.types.Data;
-import com.gps.itunes.lib.types.Dict;
-import com.gps.itunes.lib.types.False;
-import com.gps.itunes.lib.types.Helper;
-import com.gps.itunes.lib.types.Key;
-import com.gps.itunes.lib.types.LDate;
-import com.gps.itunes.lib.types.LInteger;
-import com.gps.itunes.lib.types.LString;
-import com.gps.itunes.lib.types.LibraryObject;
-import com.gps.itunes.lib.types.Plist;
-import com.gps.itunes.lib.types.TextValue;
-import com.gps.itunes.lib.types.Type;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.*;
+import java.util.Map;
 
 /**
  * Itunes Library XML parser
@@ -67,11 +49,7 @@ public class XMLParser {
 			final InputStream localDTDStream;
 			
 			checkLibraryFileExistence(filePath);
-			if(!PropertyManager.isWebContext()) {
-				localDTDStream = getLocalDTDStream(filePath);
-			} else {
-				localDTDStream = getWebDTDStream(filePath);
-			}
+			localDTDStream = getLocalDTDStream(filePath, PropertyManager.getConfigurationMap());
 
 			final DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory
 					.newInstance();
@@ -83,7 +61,7 @@ public class XMLParser {
 
 			final DocumentBuilder docBuilder = docBuilderFactory
 					.newDocumentBuilder();
-			final Document doc = docBuilder.parse(localDTDStream);
+			final Document doc = docBuilder.parse(localDTDStream, "UTF-8");
 
 			// normalize text representation
 			doc.getDocumentElement().normalize();
@@ -126,46 +104,34 @@ public class XMLParser {
 		return root;
 	}
 
-	private InputStream getWebDTDStream(final String filePath) throws MalformedURLException, IOException {
-		InputStream is = null;
-
-		final String xmlContents = IOUtils.toString(new FileReader(new File(
-				filePath)));
-
-		final String dtdModifiedString = xmlContents.replace(PropertyManager
-				.readWebProperties().getProperty("dtdUrl"), System.getProperty("ILP_WEB_DTD"));
-
-		is = IOUtils.toInputStream(dtdModifiedString, "UTF8");
-
-		return is;
-	}
-
 	private void checkLibraryFileExistence(final String filePath)
 			throws FileNotFoundException {
-		FileReader fr = null;
-		try {
-			 fr = new FileReader(filePath);
-		} finally {
-			if(fr != null) {
-				IOUtils.closeQuietly(fr);
-			}
-		}
+		FileUtils.checkFileExistenceThrowable(filePath);
 	}
 
-	private InputStream getLocalDTDStream(String filePath) throws IOException {
+	private InputStream getLocalDTDStream(String filePath, Map<String, String> configurationMap) throws IOException {
 
 		InputStream is = null;
 
 		final String xmlContents = IOUtils.toString(new FileReader(new File(
 				filePath)));
 
-		final String absolutePath = new File("").getAbsolutePath();
+		String dtdModifiedString = xmlContents;
+        if(configurationMap.containsKey(PropertyManager.Property.ITUNES_LOCAL_DTD_FILE_PROPERTY.getKey())) {
 
-		final File dtdFile = new File(absolutePath
-				+ PropertyManager.getProperties().getProperty("localDtdFile"));
+			String path = configurationMap.get(PropertyManager.Property.ITUNES_LOCAL_DTD_FILE_PROPERTY.getKey());
+			String prefix = "";
+			if(!path.startsWith(File.separator)) {
+				prefix = new File("").getAbsolutePath();
+			}
 
-		final String dtdModifiedString = xmlContents.replace(PropertyManager
-				.getProperties().getProperty("dtdUrl"), dtdFile.getPath());
+            final File localDtdFile = new File(prefix + path);
+
+            if(localDtdFile.exists()) {
+                dtdModifiedString = dtdModifiedString.replace(configurationMap.get(
+						PropertyManager.Property.ITUNES_DEFAULT_XML_DTD_URL.getKey()), localDtdFile.getPath());
+            }
+        }
 
 		is = IOUtils.toInputStream(dtdModifiedString, "UTF8");
 

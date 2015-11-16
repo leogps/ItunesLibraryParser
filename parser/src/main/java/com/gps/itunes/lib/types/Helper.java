@@ -7,7 +7,10 @@ package com.gps.itunes.lib.types;
  *
  */
 public class Helper {
-	
+
+	private static final org.apache.log4j.Logger log = org.apache.log4j.Logger
+			.getLogger(Helper.class);
+
 
 	/**
 	 * Returns the Type of playlist 
@@ -21,7 +24,7 @@ public class Helper {
 				return type;
 			}
 		}
-		System.out.println(name);
+		log.debug("Playlist type could not be found for: " + name);
 		return null;
 	}
 

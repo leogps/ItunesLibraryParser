@@ -19,14 +19,14 @@ public class ItunesLibraryParserTest {
             .getLogger(ItunesLibraryParserTest.class);
 
     static {
-        new LogInitializer();
+        LogInitializer.getInstance();
     }
 
     @Test
     public void test() throws LibraryParseException, NoChildrenException {
 
-        final LibraryObject root = new XMLParser().parseXML(PropertyManager
-                .getProperties().getProperty("libraryFileLocation"));
+        final LibraryObject root = new XMLParser().parseXML(
+                PropertyManager.getConfigurationMap().get(PropertyManager.Property.LIBRARY_FILE_LOCATION_PROPERTY.getKey()));
 
         LOG.debug(root);
 

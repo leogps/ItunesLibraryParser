@@ -3,7 +3,7 @@ package com.gps.itunes.lib.parser.utils;
 import java.util.Calendar;
 
 /**
- * Simple Utility class to ckeck processing time.
+ * Simple Utility class to check processing time.
  * 
  * @author leogps
  *

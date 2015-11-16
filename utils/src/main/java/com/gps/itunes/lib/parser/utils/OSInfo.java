@@ -46,5 +46,9 @@ public class OSInfo {
 	public static boolean isArch32() {
 		return !isArch64();
 	}
+
+	public static String getOsPrefix() {
+		return isOSMac() ? "mac" : "win";
+	}
         
 }
