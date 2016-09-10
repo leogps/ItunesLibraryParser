@@ -17,6 +17,8 @@ import com.gps.itunes.lib.xml.XMLParser;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -120,15 +122,7 @@ public class LibraryParser implements ItunesLibraryParser {
 				final List<String> srcArrayNoDuplicates = new ArrayList<String>();
 				final List<String> existingFileList = new ArrayList<String>();
 				final File destinationDir = new File(destination);
-				for (String source : srcArray) {
-					URL url = new URL(source);
-					File existingFile = FileFetcher.searchFile(FileFetcher.getFile(source), destinationDir);
-					if (existingFile != null) {
-						existingFileList.add(existingFile.getAbsolutePath());
-					} else {
-						srcArrayNoDuplicates.add(source);
-					}
-				}
+                analyzeDuplicates(srcArray, srcArrayNoDuplicates, existingFileList, destinationDir);
 
 				final List<File> copiedFiles;
 				if (progressTrackerList != null) {
@@ -158,7 +152,30 @@ public class LibraryParser implements ItunesLibraryParser {
 		}
 	}
 
-	public void copyPlaylists(final Long playlistId, final String destination,
+    private void analyzeDuplicates(String[] srcArray, List<String> srcArrayNoDuplicates, List<String> existingFileList,
+                                   File destinationDir) throws MalformedURLException, UnsupportedEncodingException {
+        for (String source : srcArray) {
+            if(testMediaSource(source)) {
+                File existingFile = FileFetcher.searchFile(FileFetcher.getFile(source), destinationDir);
+                if (existingFile != null) {
+                    existingFileList.add(existingFile.getAbsolutePath());
+                } else {
+                    srcArrayNoDuplicates.add(source);
+                }
+            }
+        }
+    }
+
+    private boolean testMediaSource(String source) {
+        try {
+            return source != null && new URL(source) != null;
+        } catch (MalformedURLException e) {
+            log.error("Media source: " + source, e);
+            return false;
+        }
+    }
+
+    public void copyPlaylists(final Long playlistId, final String destination,
 							  final ProgressInformer<ProgressInformation<CopyTrackInformation>> informer, final ProgressInformation<CopyTrackInformation> info,
 							  boolean analyzeDuplicates, ItunesLibraryParsedData itunesLibraryParsedData)
             throws IOException, FileCopyException, InvalidPlaylistException {

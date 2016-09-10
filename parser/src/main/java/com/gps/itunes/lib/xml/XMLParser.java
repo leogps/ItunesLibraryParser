@@ -125,7 +125,7 @@ public class XMLParser {
 				prefix = new File("").getAbsolutePath();
 			}
 
-            final File localDtdFile = new File(prefix + path);
+            final File localDtdFile = new File(prefix + File.separator + path);
 
             if(localDtdFile.exists()) {
                 dtdModifiedString = dtdModifiedString.replace(configurationMap.get(
