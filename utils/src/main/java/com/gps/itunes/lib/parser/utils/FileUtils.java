@@ -11,6 +11,8 @@ import java.io.FileReader;
  */
 public class FileUtils {
 
+    private static final String WINDOWS_DRIVE_SEPARATOR = ":";
+
     public static boolean checkFileExistence(String filePath) {
         try {
             checkFileExistenceThrowable(filePath);
@@ -28,7 +30,7 @@ public class FileUtils {
             }
 
             String prefix = "";
-            if(!filePath.startsWith(File.separator)) {
+            if(checkToAddPrefix(filePath)) {
                 prefix = new File("").getAbsolutePath();
             }
             fr = new FileReader(prefix + File.separator + filePath);
@@ -39,5 +41,11 @@ public class FileUtils {
                 IOUtils.closeQuietly(fr);
             }
         }
+    }
+
+    private static boolean checkToAddPrefix(String filePath) {
+        return
+                (!OSInfo.isOSWin() && !filePath.startsWith(File.separator)) ||
+                        (OSInfo.isOSWin() && !filePath.contains(WINDOWS_DRIVE_SEPARATOR));
     }
 }
