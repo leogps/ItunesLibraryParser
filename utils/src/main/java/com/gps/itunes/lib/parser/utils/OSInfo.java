@@ -1,5 +1,7 @@
 package com.gps.itunes.lib.parser.utils;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Utility class to retrieve Operating system info.
  * 
@@ -17,7 +19,7 @@ public class OSInfo {
      * @return boolean
      */
 	public static boolean isOSMac() {
-		return System.getProperty(OS_NAME).contains("Mac");
+		return StringUtils.containsIgnoreCase(System.getProperty(OS_NAME), "Mac");
 	}
 
 	/**
@@ -26,7 +28,7 @@ public class OSInfo {
 	 * @return
 	 */
 	public static boolean isOSWin() {
-		return System.getProperty(OS_NAME).contains("Windows");
+		return StringUtils.containsIgnoreCase(System.getProperty(OS_NAME), "Windows");
 	}
         
 	/**
@@ -35,7 +37,8 @@ public class OSInfo {
 	 * @return boolean
 	 */
 	public static boolean isArch64() {
-		return System.getProperty(OS_ARCH).contains("x86_64");
+		return StringUtils.containsIgnoreCase(System.getProperty(OS_ARCH), "x86_64" ) ||
+				StringUtils.containsIgnoreCase(System.getProperty(OS_ARCH), "amd64" );
 	}
 
 	/**
