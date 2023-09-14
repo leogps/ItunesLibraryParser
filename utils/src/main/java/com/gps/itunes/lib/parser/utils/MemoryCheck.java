@@ -1,8 +1,10 @@
 package com.gps.itunes.lib.parser.utils;
 
+import java.util.logging.Logger;
+
 /**
  * Memory Checker
- * 
+ *
  * @author leogps
  *
  */
@@ -10,19 +12,18 @@ public class MemoryCheck {
 	private static final int mb = 1024 * 1024;
 	private static final int kb = 1024;
 
-	private static final org.apache.log4j.Logger log = org.apache.log4j.Logger
-			.getLogger(MemoryCheck.class);
+	private static final Logger LOGGER = Logger.getLogger(MemoryCheck.class.getName());
 
 	/**
-	 * Prints used memory information. 
-	 * 
+	 * Prints used memory information.
+	 *
 	 */
 	public static void printUsedMemoryInfo() {
 		final Runtime runtime = Runtime.getRuntime();
-		log.debug("Used memory (in MB): "
+		LOGGER.info("Used memory (in MB): "
 				+ (runtime.totalMemory() - runtime.freeMemory()) / mb);
 
-		log.debug("Used memory (in KB): "
+		LOGGER.info("Used memory (in KB): "
 				+ (runtime.totalMemory() - runtime.freeMemory()) / kb);
 	}
 }

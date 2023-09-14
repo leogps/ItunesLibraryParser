@@ -5,10 +5,12 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class to create M3u file from all the tracks in a particular folder.
- * 
+ *
  * @author leogps
  *
  */
@@ -16,12 +18,12 @@ public class M3uCreator {
 
 	private static final String fileExtension = ".m3u";
 
-	private static final org.apache.log4j.Logger log = org.apache.log4j.Logger
-			.getLogger(M3uCreator.class);
+	private static final Logger LOGGER = Logger
+			.getLogger(M3uCreator.class.getName());
 
 	/**
 	 * Creates the M3u file in the playlist folder specified
-	 * 
+	 *
 	 * @param playlistFolder
 	 * @throws IOException
 	 */
@@ -34,7 +36,7 @@ public class M3uCreator {
 	}
 
 	private static void createM3u(File playlistDir) throws IOException {
-		log.debug("Creating playlist for directory: " + playlistDir);
+		LOGGER.log(Level.FINE, "Creating playlist for directory: " + playlistDir);
 
 		if (playlistDir.isDirectory()) {
 			final File playlistFile = new File(playlistDir.getAbsolutePath()
@@ -50,10 +52,10 @@ public class M3uCreator {
 						bw.write(fileName);
 						bw.newLine();
 					}
-					log.debug("Playlist file created successfully. "
+					LOGGER.log(Level.FINE, "Playlist file created successfully. "
 							+ playlistFile);
 				} else {
-					log.error("Error occurred when creating playlist file.");
+					LOGGER.log(Level.SEVERE, "Error occurred when creating playlist file.");
 				}
 			} finally {
 				bw.flush();
@@ -82,10 +84,10 @@ public class M3uCreator {
 						bw.write(getRelativePath(playlistDir, new File(existingFile)));
 						bw.newLine();
 					}
-					log.debug("Playlist file created successfully. "
+					LOGGER.log(Level.FINE, "Playlist file created successfully. "
 							+ playlistFile);
 				} else {
-					log.error("Error occurred when creating playlist file.");
+					LOGGER.log(Level.SEVERE, "Error occurred when creating playlist file.");
 				}
 
 			} finally {

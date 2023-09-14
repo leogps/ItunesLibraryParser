@@ -5,7 +5,7 @@
     <parent>
         <artifactId>ItunesLibraryParser</artifactId>
         <groupId>com.gps.ilp</groupId>
-        <version>2.0.0</version>
+        <version>2.0.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -15,7 +15,7 @@
         <dependency>
             <groupId>com.gps.ilp</groupId>
             <artifactId>utils</artifactId>
-            <version>2.0.0</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -30,6 +30,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
                 <configuration>
                     <finalName>${project.groupId}-${project.artifactId}-${project.version}</finalName>
                     <archive>
@@ -43,7 +44,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.6</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -63,6 +64,14 @@
                             <mainClass>com.gps.itunes.lib.parser.Main</mainClass>
                         </manifest>
                     </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
                 </configuration>
             </plugin>
         </plugins>

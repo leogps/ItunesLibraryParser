@@ -13,28 +13,30 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility class to copy the library files (files in general) to any
  * destination.
- * 
+ *
  * @author leogps
- * 
+ *
  */
 public class FileFetcher implements Serializable {
 
     public static final String UTF_8 = "UTF-8";
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
-	private static final org.apache.log4j.Logger log = org.apache.log4j.Logger
-			.getLogger(FileFetcher.class);
+	private static final Logger LOGGER = Logger
+			.getLogger(FileFetcher.class.getName());
 
 	/**
 	 * Copies array of files represented by srcArray to destination.
-	 * 
+	 *
 	 * @param srcArray
 	 * @param dest
 	 * @throws FileCopyException
@@ -48,7 +50,7 @@ public class FileFetcher implements Serializable {
 	 * Copies array of files represented by srcArray to destination and also
 	 * informs the copy progress info i.e., {@link ProgressInformation} using
 	 * the {@link ProgressInformer}
-	 * 
+	 *
 	 * @param srcArray
 	 * @param dest
 	 * @throws FileCopyException
@@ -99,7 +101,7 @@ public class FileFetcher implements Serializable {
                     }
 
 
-                    log.debug("Writing file: " + outputFile.getAbsolutePath());
+                    LOGGER.log(Level.FINE, "Writing file: " + outputFile.getAbsolutePath());
                     outputFile.createNewFile();
                     final int len = 8192;
                     final byte[] b = new byte[len];
@@ -108,11 +110,11 @@ public class FileFetcher implements Serializable {
                     while (is.read(b) != -1) {
                         fos.write(b, off, b.length);
                     }
-                    log.debug("Done writing file: " + outputFile.getAbsolutePath());
+                    LOGGER.log(Level.FINE, "Done writing file: " + outputFile.getAbsolutePath());
                     copiedFiles.add(outputFile);
                     ++count;
                 } catch (IOException ioe) {
-                    log.error("IOException occurred.", ioe);
+                    LOGGER.log(Level.SEVERE, "IOException occurred.", ioe);
 
                     failedCount++;
                     final int progress = (int) ((count / (float) total) * 100);
@@ -139,7 +141,7 @@ public class FileFetcher implements Serializable {
                 }
             }
         } catch (IOException ioe) {
-            log.error("IOException occurred.", ioe);
+            LOGGER.log(Level.SEVERE, "IOException occurred.", ioe);
             throw new FileCopyException(ioe);
         }
         return copiedFiles;
@@ -187,7 +189,7 @@ public class FileFetcher implements Serializable {
             }
 
         } else {
-            log.error("files can only be searched in directories. Found non-directory.");
+            LOGGER.log(Level.SEVERE, "files can only be searched in directories. Found non-directory.");
         }
 
         return null;

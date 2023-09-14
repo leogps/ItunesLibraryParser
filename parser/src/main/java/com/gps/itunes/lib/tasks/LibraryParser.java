@@ -8,6 +8,7 @@ import com.gps.itunes.lib.items.playlists.Playlist;
 import com.gps.itunes.lib.items.tracks.Track;
 import com.gps.itunes.lib.parser.ItunesLibraryParsedData;
 import com.gps.itunes.lib.parser.ItunesLibraryParser;
+import com.gps.itunes.lib.parser.utils.BannerPrinter;
 import com.gps.itunes.lib.parser.utils.PropertyManager;
 import com.gps.itunes.lib.tasks.progressinfo.CopyTrackInformation;
 import com.gps.itunes.lib.tasks.progressinfo.ProgressInformation;
@@ -21,9 +22,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Provides Solid implementation of {@link ItunesLibraryParser}
@@ -35,8 +37,7 @@ public class LibraryParser implements ItunesLibraryParser {
 
 	private final XMLParser xmlParser = new XMLParser();
 
-    private static final org.apache.log4j.Logger log = org.apache.log4j.Logger
-            .getLogger(LibraryParser.class);
+	private static final Logger LOGGER = Logger.getLogger(BannerPrinter.class.getName());
 
     public void addParseConfiguration(String configurationKey, String configurationValue) {
 		PropertyManager.getConfigurationMap().put(configurationKey, configurationValue);
@@ -52,7 +53,7 @@ public class LibraryParser implements ItunesLibraryParser {
         Map<Long, Track[]> playlistTrackMap = new PlaylistTrackMapper(allPlaylists, allTracks)
                 .getPlaylistTracks();
 
-        log.debug("Successfully Parsed.");
+		LOGGER.info("Successfully Parsed.");
         return new ItunesLibraryParsedDataImpl(root, allPlaylists, allTracks, playlistTrackMap);
 	}
 
@@ -148,7 +149,7 @@ public class LibraryParser implements ItunesLibraryParser {
 			}
 
 		} else {
-			log.error("Playlist folder could not be created.");
+			LOGGER.log(Level.SEVERE, "Playlist folder could not be created.");
 		}
 	}
 
@@ -168,9 +169,11 @@ public class LibraryParser implements ItunesLibraryParser {
 
     private boolean testMediaSource(String source) {
         try {
-            return source != null && new URL(source) != null;
+            if (source == null) return false;
+            new URL(source);
+            return true;
         } catch (MalformedURLException e) {
-            log.error("Media source: " + source, e);
+			LOGGER.log(Level.SEVERE, "Media source: " + source, e);
             return false;
         }
     }
@@ -205,7 +208,7 @@ public class LibraryParser implements ItunesLibraryParser {
 
 	private String fetchDefaultDestination(final Long playlistId) {
 		return PropertyManager.getConfigurationMap()
-                .get("playist.copy.destination")
+                .get("playlist.copy.destination")
 				+ File.separator + playlistId;
 	}
 

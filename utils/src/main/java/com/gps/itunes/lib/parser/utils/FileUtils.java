@@ -1,10 +1,7 @@
 package com.gps.itunes.lib.parser.utils;
 
-import org.apache.commons.io.IOUtils;
-
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 
 /**
  * Created by leogps on 10/3/15.
@@ -23,23 +20,17 @@ public class FileUtils {
     }
 
     public static void checkFileExistenceThrowable(String filePath) throws FileNotFoundException {
-        FileReader fr = null;
-        try {
-            if(filePath == null) {
-                throw new RuntimeException("Properties file path is null");
-            }
-
-            String prefix = "";
-            if(checkToAddPrefix(filePath)) {
-                prefix = new File("").getAbsolutePath();
-            }
-            fr = new FileReader(prefix + File.separator + filePath);
-        } catch (FileNotFoundException e) {
-            throw e;
-        } finally {
-            if(fr != null) {
-                IOUtils.closeQuietly(fr);
-            }
+        if(filePath == null) {
+            throw new RuntimeException("Properties file path is null");
+        }
+        String prefix = "";
+        if(checkToAddPrefix(filePath)) {
+            prefix = new File("").getAbsolutePath();
+        }
+        String fullFilePath = String.format("%s%s%s", prefix, File.separator, filePath);
+        File file = new File(fullFilePath);
+        if (!file.exists()) {
+            throw new FileNotFoundException(fullFilePath);
         }
     }
 

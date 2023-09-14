@@ -5,7 +5,7 @@ import com.gps.itunes.lib.exceptions.NoChildrenException;
 import com.gps.itunes.lib.items.playlists.Playlist;
 import com.gps.itunes.lib.items.tracks.Track;
 import com.gps.itunes.lib.parser.ItunesLibraryParsedData;
-import com.gps.itunes.lib.parser.utils.LogInitializer;
+import com.gps.itunes.lib.parser.utils.BannerPrinter;
 import com.gps.itunes.lib.types.LibraryObject;
 
 import java.util.Map;
@@ -16,16 +16,13 @@ import java.util.Map;
 public class ItunesLibraryParsedDataImpl implements ItunesLibraryParsedData {
 
     static {
-        LogInitializer.getInstance();
+        BannerPrinter.print();
     }
 
     private final LibraryObject root;
     private final Playlist[] allPlaylists;
     private final Track[] allTracks;
     private final Map<Long, Track[]> plistTrackMap;
-
-    private static final org.apache.log4j.Logger log = org.apache.log4j.Logger
-            .getLogger(LibraryParser.class);
 
     /**
      * Parses the library with already constructed root element.

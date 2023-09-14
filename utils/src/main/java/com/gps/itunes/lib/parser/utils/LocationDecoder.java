@@ -12,20 +12,17 @@ import java.util.logging.Logger;
  */
 public class LocationDecoder {
 
-    private static final Logger log = Logger.getLogger(LocationDecoder.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(LocationDecoder.class.getName());
 
     public static String decodeLocation(String location) {
         if(location != null) {
             try {
                 URL url = new URL(location);
                 return URLDecoder.decode(url.getPath(), "UTF-8");
-            } catch (MalformedURLException e) {
-                log.log(Level.WARNING, "Could not decode location.", e);
-            } catch (UnsupportedEncodingException e) {
-                log.log(Level.WARNING, "Could not decode location.", e);
+            } catch (MalformedURLException | UnsupportedEncodingException e) {
+                LOGGER.log(Level.WARNING, "Could not decode location.", e);
             }
         }
         return location;
     }
-
 }

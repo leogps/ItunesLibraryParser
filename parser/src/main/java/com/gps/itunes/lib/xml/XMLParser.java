@@ -3,10 +3,9 @@ package com.gps.itunes.lib.xml;
 import com.gps.itunes.lib.exceptions.LibraryParseException;
 import com.gps.itunes.lib.exceptions.NoChildrenException;
 import com.gps.itunes.lib.parser.utils.FileUtils;
-import com.gps.itunes.lib.parser.utils.ProcessesingTimeCheck;
+import com.gps.itunes.lib.parser.utils.ProcessingBenchmarker;
 import com.gps.itunes.lib.parser.utils.PropertyManager;
 import com.gps.itunes.lib.types.*;
-import org.apache.commons.io.IOUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -18,24 +17,31 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Itunes Library XML parser
- * 
+ *
  * @author leogps
  *
  */
 public class XMLParser {
 
-	private static final org.apache.log4j.Logger log = org.apache.log4j.Logger
-			.getLogger(XMLParser.class);
+	private static final Logger LOGGER = Logger
+			.getLogger(XMLParser.class.getName());
 
 	/**
 	 * Parses the XML at the specified path and returns the LibraryObject of the
 	 * Root element. <br />
 	 * The root element contains everything as it's children and their children.
-	 * 
+	 *
 	 * @param filePath
 	 * @return {@link LibraryObject}
 	 * @throws com.gps.itunes.lib.exceptions.LibraryParseException
@@ -43,11 +49,11 @@ public class XMLParser {
 	 */
 	public LibraryObject parseXML(final String filePath)
 			throws LibraryParseException, NoChildrenException {
-		LibraryObject root = null;
+		LibraryObject root;
 
 		try {
 			final InputStream localDTDStream;
-			
+
 			checkLibraryFileExistence(filePath);
 			localDTDStream = getLocalDTDStream(filePath, PropertyManager.getConfigurationMap());
 
@@ -65,19 +71,19 @@ public class XMLParser {
 
 			// normalize text representation
 			doc.getDocumentElement().normalize();
-			log.debug("Root element of the doc is "
+			LOGGER.log(Level.FINE, "Root element of the doc is "
 					+ doc.getDocumentElement().getNodeName());
 
 			final NodeList listOfPlaylists = doc.getElementsByTagName("plist");
 			final int playlistLength = listOfPlaylists.getLength();
-			log.debug("Total no of playlist elements : " + playlistLength);
+			LOGGER.log(Level.FINE, "Total no of playlist elements : " + playlistLength);
 
 			final Element rootElement = doc.getDocumentElement();
 
 			root = getPlaylistElement(
-					Helper.getPlaylistType(rootElement.getNodeName()), null);
+					Objects.requireNonNull(Helper.getPlaylistType(rootElement.getNodeName())), null);
 
-			final ProcessesingTimeCheck timeChecker = new ProcessesingTimeCheck();
+			final ProcessingBenchmarker timeChecker = new ProcessingBenchmarker();
 			timeChecker.setANow();
 
 			buildDOM(root, rootElement);
@@ -111,12 +117,7 @@ public class XMLParser {
 
 	private InputStream getLocalDTDStream(String filePath, Map<String, String> configurationMap) throws IOException {
 
-		InputStream is = null;
-
-		final String xmlContents = IOUtils.toString(new FileReader(new File(
-				filePath)));
-
-		String dtdModifiedString = xmlContents;
+        String dtdModifiedString = readFileContents(filePath);
         if(configurationMap.containsKey(PropertyManager.Property.ITUNES_LOCAL_DTD_FILE_PROPERTY.getKey())) {
 
 			String path = configurationMap.get(PropertyManager.Property.ITUNES_LOCAL_DTD_FILE_PROPERTY.getKey());
@@ -133,9 +134,12 @@ public class XMLParser {
             }
         }
 
-		is = IOUtils.toInputStream(dtdModifiedString, "UTF8");
+		return new ByteArrayInputStream(dtdModifiedString.getBytes(StandardCharsets.UTF_8));
+	}
 
-		return is;
+	private String readFileContents(String filePath) throws IOException {
+		return Files.lines(Paths.get(filePath))
+				.collect(Collectors.joining(System.lineSeparator()));
 	}
 
 	private void normalize(final LibraryObject libraryObject)

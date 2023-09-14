@@ -1,14 +1,16 @@
 package com.gps.itunes.lib.parser.utils;
 
 import java.util.Calendar;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Simple Utility class to check processing time.
- * 
+ *
  * @author leogps
  *
  */
-public class ProcessesingTimeCheck {
+public class ProcessingBenchmarker {
 
 	private Long startTime;
 	private Long endTime;
@@ -17,12 +19,12 @@ public class ProcessesingTimeCheck {
 	private static final int invMins = 60 * invSecs;
 	private static final int invHrs = 60 * invMins;
 
-	private static final org.apache.log4j.Logger log = org.apache.log4j.Logger
-			.getLogger(ProcessesingTimeCheck.class);
+	private static final Logger LOGGER = Logger
+			.getLogger(ProcessingBenchmarker.class.getName());
 
 	/**
 	 * Set initial time
-	 * 
+	 *
 	 */
 	public void setANow() {
 		startTime = Calendar.getInstance().getTimeInMillis();
@@ -35,14 +37,14 @@ public class ProcessesingTimeCheck {
 		endTime = Calendar.getInstance().getTimeInMillis();
 	}
 
-	/** 
+	/**
 	 * Print time taken
 	 */
 	public void printTimeTaken() {
 		if (startTime == null || endTime == null) {
-			log.debug("Either start time or end time not set");
+			LOGGER.log(Level.FINE, "Either start time or end time not set");
 		} else {
-			log.debug(parseTime(endTime - startTime));
+			LOGGER.log(Level.FINE, parseTime(endTime - startTime));
 		}
 	}
 

@@ -5,7 +5,7 @@ import com.gps.itunes.lib.exceptions.NoChildrenException;
 import com.gps.itunes.lib.items.playlists.Playlist;
 import com.gps.itunes.lib.items.tracks.Track;
 import com.gps.itunes.lib.parser.utils.LocationDecoder;
-import com.gps.itunes.lib.parser.utils.LogInitializer;
+import com.gps.itunes.lib.parser.utils.BannerPrinter;
 import com.gps.itunes.lib.parser.utils.PropertyManager;
 import com.gps.itunes.lib.tasks.LibraryParser;
 import org.apache.commons.cli.*;
@@ -15,7 +15,7 @@ import org.apache.commons.cli.*;
  */
 public class Main {
 
-    public static void main(String args[]) throws ParseException, LibraryParseException, NoChildrenException {
+    public static void main(String[] args) throws ParseException, LibraryParseException, NoChildrenException {
         Options options = buildOptions();
         CommandLine commandLine = parseArgs(options, args);
         processCommandLine(commandLine, options);
@@ -98,7 +98,7 @@ public class Main {
     }
 
     private static void printVersion() {
-        System.out.println("iTunesLibraryParser version: " + LogInitializer.VERSION);
+        System.out.println("iTunesLibraryParser version: " + BannerPrinter.VERSION);
     }
 
     private static CommandLine parseArgs(Options options, String[] args) throws ParseException {
