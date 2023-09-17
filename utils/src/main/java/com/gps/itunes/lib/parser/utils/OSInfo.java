@@ -8,6 +8,8 @@ package com.gps.itunes.lib.parser.utils;
  */
 public class OSInfo {
 
+	private static String OS = System.getProperty("os.name").toLowerCase();
+
 	private final static String OS_NAME = "os.name";
         private final static String OS_ARCH = "os.arch";
 
@@ -17,7 +19,7 @@ public class OSInfo {
      * @return boolean
      */
 	public static boolean isOSMac() {
-		return containsIgnoreCase(System.getProperty(OS_NAME), "Mac");
+		return OS.contains("mac");
 	}
 
 	/**
@@ -26,7 +28,11 @@ public class OSInfo {
 	 * @return
 	 */
 	public static boolean isOSWin() {
-		return containsIgnoreCase(System.getProperty(OS_NAME), "Windows");
+		return OS.contains("win");
+	}
+
+	public static boolean isOSLinux() {
+		return (OS.contains("nix") || OS.contains("nux") || OS.contains("aix"));
 	}
 
 	/**
@@ -49,11 +55,31 @@ public class OSInfo {
 	}
 
 	public static String getOsPrefix() {
-		return isOSMac() ? "mac" : "win";
+		if (isOSMac()) {
+			return "mac";
+		}
+		if (isOSWin()) {
+			return "win";
+		}
+		return "nix";
 	}
 
 	public static boolean containsIgnoreCase(String string, String searchString) {
 		return string != null && string.toLowerCase().contains(searchString.toLowerCase());
 	}
 
+	public static void main(String[] args) {
+
+		System.out.println(OS);
+
+		if (isOSWin()) {
+			System.out.println("This is Windows");
+		} else if (isOSMac()) {
+			System.out.println("This is MacOS");
+		} else if (isOSLinux()) {
+			System.out.println("This is Unix or Linux");
+		} else {
+			System.out.println("Your OS is not supported!!");
+		}
+	}
 }

@@ -56,7 +56,9 @@ public class PropertyManager {
 
         MAC_PROPERTIES_FILE_PROPERTY("ilp.mac.properties.file", "/config/mac-app.properties"),
 
-        WIN_PROPERTIES_FILE_PROPERTY("ilp.win.properties.file", "/config/win-app.properties");
+        WIN_PROPERTIES_FILE_PROPERTY("ilp.win.properties.file", "/config/win-app.properties"),
+
+        NIX_PROPERTIES_FILE_PROPERTY("ilp.win.properties.file", "/config/nix-app.properties");
 
         private final String key;
         private final String defaultValue;
@@ -87,7 +89,9 @@ public class PropertyManager {
             propertiesFilePath = configurationMap.get(Property.WIN_PROPERTIES_FILE_PROPERTY);
 		} else if(OSInfo.isOSMac() && configurationMap.containsKey(Property.MAC_PROPERTIES_FILE_PROPERTY)){
             propertiesFilePath = configurationMap.get(Property.MAC_PROPERTIES_FILE_PROPERTY);
-		}
+		}  else if(OSInfo.isOSLinux() && configurationMap.containsKey(Property.NIX_PROPERTIES_FILE_PROPERTY)){
+            propertiesFilePath = configurationMap.get(Property.NIX_PROPERTIES_FILE_PROPERTY);
+        }
 
         if(propertiesFilePath == null) {
             propertiesFilePath = "config" + File.separator + OSInfo.getOsPrefix() + "-app.properties";
